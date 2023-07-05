@@ -5,13 +5,15 @@ const router = express.Router()
 router.use(express.json())
 const checkToken = require("../utils")
 
-router.get('/product', checkToken,async (req, res) => {
+router.get('/product',async (req, res) => {
     try {
-        const { sortKey, sortValue, brand, title, maxPrice, minPrice, page, limit } = req.query;
+        const { sortKey, sortValue, brand, title, maxPrice, minPrice, page, limit, category,id } = req.query;
         const query = {}
         if (brand) query.brand = brand
-        if (title) query.title = title
+        if (title) query.title = { $regex : title , $options : "i"} //for matching the title for searching funtion options : i is default
         if (maxPrice | minPrice) query.price = { $lte: maxPrice, $gte: minPrice }
+        if( category) query.category =category
+        if(id) query.id = _id
 
         const product = await Product.find(query)
             .populate("seller")
@@ -45,18 +47,18 @@ router.get('/product/aggregate', async(req,res)=>{
             }
         ]
     )
-    res.status(200).send(products)
+    res.status(200).send({data : products})
 })
 
 router.get('/product/:id', async (req, res) => {
     try {
-        const product = await Product.findById(req.params.id)
+        const product = await Product.findById({_id : req.params.id}).populate("category")
         res.status(200).send(product)
     } catch (e) {
         res.status(404).send({ error: e })
     }
 })
-router.post('/product', async (req, res) => {
+router.post('/product',checkToken, async (req, res) => {
     const product = Product({ ...req.body })
     await product.save()
     res.status(201).send(product)
@@ -69,7 +71,7 @@ router.patch('/product/:id', async (req, res) => {
         res.status(404).send({ error: e })
     }
 })
-router.delete('/product', (req, res) => {
+router.delete('/product/:id', (req, res) => {
     try {
         const product = Product.findByIdAndDelete(req.params.id)
         res.status(200).send("Product deleted succesfuly")
