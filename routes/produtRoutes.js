@@ -7,13 +7,14 @@ const checkToken = require("../utils")
 
 router.get('/product',async (req, res) => {
     try {
-        const { sortKey, sortValue, brand, title, maxPrice, minPrice, page, limit, category,id } = req.query;
+        const { sortKey, sortValue, brand, title, maxPrice, minPrice, page, limit, category,id,seller } = req.query;
         const query = {}
         if (brand) query.brand = brand
         if (title) query.title = { $regex : title , $options : "i"} //for matching the title for searching funtion options : i is default
         if (maxPrice | minPrice) query.price = { $lte: maxPrice, $gte: minPrice }
         if( category) query.category =category
         if(id) query.id = _id
+        if(seller) query.seller = seller
 
         const product = await Product.find(query)
             .populate("seller")
